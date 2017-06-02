@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>养鸡场</title>
+    <style>
+    	* { padding: 0; margin: 0; }
+    	canvas { background: #eee; display: block; margin: 20px auto; }
+    </style>
+</head>
+<body>
+
+<canvas id="chickenDefense" width="800" height="600"></canvas>
+
+<script>
+	// JavaScript code goes here
+    var canvas = document.getElementById("chickenDefense");
+    var ctx = canvas.getContext("2d");
+    var gamespeed = 100;
+    var maximumChickenCount = 50;
+    var spawnCountdown = getNewCountdown(); 
+
+    var towerList = new Array();
+    var chickenList = new Array();
+
+    function loop() {
+        // clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // draw chickens
+        for (chicken of chickenList) {
+            chicken.move();
+            chicken.draw();
+        }
+
+        // draw towers
+        for (tower of towerList){
+            tower.acquireTarget();
+            tower.draw();
+        }
+               
+        // check for spawn
+        checkForRespawn();
+        cleanEscapedChicken();
+    }
+
+    function getNewCountdown() {
+        return getRandomInt(100, 200);
+    }
+    
+    function checkForRespawn(){
+        if (spawnCountdown < 0 ){
+            spawnCountdown = getNewCountdown();
+            if (chickenList.length >= maximumChickenCount) {
+                for (var i = 0; i < chickenList.length; i++) {
+                    if (!chickenList[i].isAlive()) {
+                        chickenList[i].respawn();
+                        break;
+                    }
+                }
+            } else {
+                chickenList.push(new Chicken());
+            }
+        } else {
+            spawnCountdown -= gamespeed;
+        }
+    }
+
+    function cleanEscapedChicken() {
+        for (var i = 0; i < chickenList.length; i++) {
+            if (chickenList[i].center().y > canvas.height) {
+                chickenList[i].deactivate();
+            }
+        }
+    }
+    
+    function Chicken() {
+        this.size = 20;
+        this.speed = 10;
+        this.x = getRandomInt(this.size, canvas.width - this.size);
+        this.y = this.size;
+        this.status = 1;
+        this.font = this.sieze + "px Arial";
+        this.center = function() {
+            return {
+                x: this.x + this.size / 2,
+                y: this.y - this.size / 2
+            }
+        };           
+        this.draw = function() {
+            if (this.status == 1) {
+                ctx.beginPath();
+                ctx.font = this.font; 
+                ctx.fillText("鸡", this.x, this.y);
+                ctx.closePath();
+            }
+        };
+        this.move = function() {
+            if (this.status == 1) {
+                this.y += this.speed;
+            }
+        };
+        this.respawn = function() {
+            if (this.status == 0) {
+                this.x = getRandomInt(this.size, canvas.width - this.size);
+                this.y = this.size;
+                this.status = 1;
+            }
+        };
+        this.deactivate = function() {
+            if (this.status == 1) {
+                this.status = 0;
+            }
+        };
+        this.isAlive = function() {
+            return this.status == 1;
+        }
+    }
+
+    function Tower(x, y) {
+        this.x = x;
+        this.y = y;
+        this.range = 80;
+        this.fireRate = 1000;
+        this.size = 20;
+        this.target = null;
+        this.center = function() {
+            return {
+                x: this.x + this.size / 2,
+                y: this.y - this.size / 2
+            }
+        };
+        this.draw = function () {
+            ctx.beginPath();
+            ctx.font = this.size + "px Arial";
+            ctx.fillText("塔", x, y);
+            ctx.closePath();
+            ctx.beginPath();
+            ctx.arc(this.center().x, this.center().y, this.range, 0, 2*Math.PI, false);
+            ctx.strokeStyle = 'rgb(255, 0, 0)';
+            ctx.setLineDash([2]);
+            ctx.stroke();
+            ctx.closePath();
+            if (this.target != null) {
+                ctx.beginPath();
+                ctx.setLineDash([]);
+                ctx.moveTo(this.center().x, this.center().y);
+                ctx.lineTo(this.target.center().x, this.target.center().y);
+                ctx.stroke();
+                ctx.closePath();
+            }
+            if (this.target != null) {
+                this.target.deactivate();
+                this.target = null;
+            }
+        };
+        this.acquireTarget = function() {
+            for (var i = 0; i < chickenList.length; i++) {
+                if (chickenList[i].isAlive() && isInRange(this.range, this.center().x, this.center().y, chickenList[i].center().x, chickenList[i].center().y)) {
+                    this.target = chickenList[i];
+                    break;
+                }
+            }
+        };
+    }
+
+    function isInRange(range, x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)) <= range;
+    }
+
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    (function prepareGame() {
+        towerList.push(new Tower(Math.floor(canvas.width / 4) * 1, canvas.height - 100));
+        towerList.push(new Tower(Math.floor(canvas.width / 4) * 2, canvas.height - 100));
+        towerList.push(new Tower(Math.floor(canvas.width / 4) * 3, canvas.height - 100));
+        chickenList.push(new Chicken());
+    })();
+
+    setInterval(loop, gamespeed);
+
+    </script>
+
+</body>
+</html>
