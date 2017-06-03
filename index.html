@@ -16,8 +16,8 @@
 	// JavaScript code goes here
     var canvas = document.getElementById("chickenDefense");
     var ctx = canvas.getContext("2d");
-    var gamespeed = 100;
-    var maximumChickenCount = 50;
+    var gamespeed = 20;
+    var maximumChickenCount = 200;
     var spawnCountdown = getNewCountdown(); 
 
     var towerList = new Array();
@@ -45,7 +45,7 @@
     }
 
     function getNewCountdown() {
-        return getRandomInt(100, 200);
+        return getRandomInt(5, 20);
     }
     
     function checkForRespawn(){
@@ -76,7 +76,7 @@
     
     function Chicken() {
         this.size = 20;
-        this.speed = 10;
+        this.speed = 5;
         this.x = getRandomInt(this.size, canvas.width - this.size);
         this.y = this.size;
         this.status = 1;
